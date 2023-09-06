@@ -1,0 +1,1 @@
+/usr/bin/g++ -g CMakeFiles/canvas-draw.dir/example.cpp.o -o canvas-draw 

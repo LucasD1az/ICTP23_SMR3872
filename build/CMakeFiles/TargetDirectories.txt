@@ -1,0 +1,3 @@
+/home/lucas/Documents/School/build/CMakeFiles/canvas-draw.dir
+/home/lucas/Documents/School/build/CMakeFiles/edit_cache.dir
+/home/lucas/Documents/School/build/CMakeFiles/rebuild_cache.dir
