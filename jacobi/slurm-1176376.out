@@ -1,0 +1,58 @@
+Unloading profile/base
+  ERROR: Module evaluation aborted
+make: Nothing to be done for 'default'.
+make: Nothing to be done for 'default'.
+Jacobi relaxation Calculation: 4096 x 4096 mesh
+    0, 0.25000000
+   10, 0.02156258
+   20, 0.01148877
+   30, 0.00782563
+   40, 0.00585664
+   50, 0.00475146
+   60, 0.00394522
+   70, 0.00341197
+   80, 0.00297969
+   90, 0.00265807
+Elapsed time (s) = 3.91
+Stopped at iteration: 100
+libcupti.so not found
+
+Accelerator Kernel Timing data
+/leonardo_work/ICT23_SMR3872/users/ldiazcel/Day4/jacobi/openacc/../src/laplace2d.c
+  main  NVIDIA  devicenum=0
+    time(us): 11,873
+    44: data region reached 2 times
+        44: data copyin transfers: 8
+             device time(us): total=5,405 max=685 min=674 avg=675
+        69: data copyout transfers: 9
+             device time(us): total=5,252 max=659 min=14 avg=583
+    50: compute region reached 100 times
+        51: kernel launched 100 times
+            grid: [65535]  block: [128]
+            elapsed time(us): total=22,666 max=236 min=220 avg=226
+        51: reduction kernel launched 100 times
+            grid: [1]  block: [256]
+            elapsed time(us): total=13,721 max=141 min=133 avg=137
+    50: data region reached 200 times
+        50: data copyin transfers: 100
+             device time(us): total=430 max=7 min=4 avg=4
+        56: data copyout transfers: 100
+             device time(us): total=786 max=16 min=6 avg=7
+    61: compute region reached 100 times
+        62: kernel launched 100 times
+            grid: [65535]  block: [128]
+            elapsed time(us): total=21,277 max=216 min=199 avg=212
+Jacobi relaxation Calculation: 4096 x 4096 mesh
+Using OpenACC
+    0, 0.25000000
+   10, 0.02156258
+   20, 0.01148877
+   30, 0.00782563
+   40, 0.00585664
+   50, 0.00475146
+   60, 0.00394522
+   70, 0.00341197
+   80, 0.00297969
+   90, 0.00265807
+Elapsed time (s) = 0.25
+Stopped at iteration: 100

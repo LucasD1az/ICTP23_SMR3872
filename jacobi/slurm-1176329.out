@@ -1,0 +1,6 @@
+Unloading profile/base
+  ERROR: Module evaluation aborted
+make: Nothing to be done for 'default'.
+make: Nothing to be done for 'default'.
+/var/spool/slurmd/job1176329/slurm_script: line 23: ../laplace2d_serial.x: No such file or directory
+/var/spool/slurmd/job1176329/slurm_script: line 24: ../laplace2d_openacc.x: No such file or directory

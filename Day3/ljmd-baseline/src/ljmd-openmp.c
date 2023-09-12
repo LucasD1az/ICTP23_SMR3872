@@ -114,7 +114,7 @@ static void force(mdsys_t *sys)
     c6*=4.0*sys->epsilon;
     rcsq=sys->rcut*sys->rcut;
 #if defined(_OPENMP)
-#pragma omp parallel reduction(+:epot)// private(i,j,rx,ry,rz,rsq,ffac) shared(sys,rcsq,c6,c12)
+#pragma omp parallel reduction(+:epot) private(i,j,rx,ry,rz,rsq,ffac) shared(sys,rcsq,c6,c12)
 #endif
     { double *fx, *fy, *fz;
 #if defined(_OPENMP)
@@ -165,11 +165,11 @@ static void force(mdsys_t *sys)
         }
     }
 #if defined (_OPENMP)
-printf("Llegué! %d\n", tid);
+// printf("Llegué! %d\n", tid);
 #pragma omp barrier
 #endif
     i = 1 + (sys->natoms / sys->nthreads);
-            printf("So far so good post barrier %d\n", tid);
+     //       printf("So far so good post barrier %d\n", tid);
     int fromidx = tid * i;
     int toidx = fromidx + i;
     if (toidx > sys->natoms) toidx = sys->natoms;
@@ -268,20 +268,6 @@ int main(int argc, char **argv)
     if(get_a_line(stdin,line)) return 1;
     nprint=atoi(line);
 
-    /* allocate memory */
-    sys.rx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.ry=(double *)malloc(sys.natoms*sizeof(double));
-    sys.rz=(double *)malloc(sys.natoms*sizeof(double));
-    sys.vx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.vy=(double *)malloc(sys.natoms*sizeof(double));
-    sys.vz=(double *)malloc(sys.natoms*sizeof(double));
-    sys.fx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.fy=(double *)malloc(sys.natoms*sizeof(double));
-    sys.fz=(double *)malloc(sys.natoms*sizeof(double));
-    sys.cx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.cy=(double *)malloc(sys.natoms*sizeof(double));
-    sys.cz=(double *)malloc(sys.natoms*sizeof(double));
-
     #if defined(_OPENMP)
     #pragma omp parallel
         {
@@ -290,6 +276,20 @@ int main(int argc, char **argv)
     #else
     sys.nthreads=1;
     #endif
+    /* allocate memory */
+    sys.rx=(double *)malloc(sys.natoms*sizeof(double));
+    sys.ry=(double *)malloc(sys.natoms*sizeof(double));
+    sys.rz=(double *)malloc(sys.natoms*sizeof(double));
+    sys.vx=(double *)malloc(sys.natoms*sizeof(double));
+    sys.vy=(double *)malloc(sys.natoms*sizeof(double));
+    sys.vz=(double *)malloc(sys.natoms*sizeof(double));
+    sys.fx=(double *)malloc(sys.natoms*sys.nthreads*sizeof(double));
+    sys.fy=(double *)malloc(sys.natoms*sys.nthreads*sizeof(double));
+    sys.fz=(double *)malloc(sys.natoms*sys.nthreads*sizeof(double));
+    // sys.cx=(double *)malloc(sys.natoms*sizeof(double));
+    // sys.cy=(double *)malloc(sys.natoms*sizeof(double));
+    // sys.cz=(double *)malloc(sys.natoms*sizeof(double));
+
     /* read restart */
     fp=fopen(restfile,"r");
     if(fp) {
