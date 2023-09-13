@@ -7,8 +7,10 @@ import numpy as np
 import os
 
 # Define the number of iterations and the interval between frames
-num_iterations = 10000
-frame_interval = 100  # Every 10 iterations
+w = 4400
+dt = 0.000000025
+num_iterations = int(10/w/dt)#10000
+frame_interval = int(num_iterations/100)  # Every 10 iterations
 
 # Create a figure and axis for plotting
 fig, ax = plt.subplots()

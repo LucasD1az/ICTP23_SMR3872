@@ -5,7 +5,7 @@ import numpy as np
 data = np.loadtxt('modonormal.dat')
 
 # Create a heatmap
-plt.imshow(data, cmap='viridis', origin='upper', vmin=0,vmax=100, extent=[0, data.shape[1], 0, data.shape[0]])
+plt.imshow(data, cmap='viridis', origin='upper', vmin=0,vmax=500, extent=[0, data.shape[1], 0, data.shape[0]])
 plt.colorbar(label='Value')
 
 # Set axis labels (if needed)
