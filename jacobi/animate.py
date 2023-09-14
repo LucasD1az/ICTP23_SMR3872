@@ -7,8 +7,8 @@ import numpy as np
 import os
 
 # Define the number of iterations and the interval between frames
-w = 6000
-dt = 0.000000025
+w = 7800
+dt = 0.000000005
 num_iterations = int(10/w/dt)#10000
 frame_interval = int(num_iterations/50)  # Every 10 iterations
 

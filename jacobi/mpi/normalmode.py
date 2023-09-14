@@ -2,10 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the data from the file
-data = np.loadtxt('solution.dat')
+data = np.loadtxt('solution_4000.dat')
 
 # Create a heatmap
-plt.imshow(data, cmap='viridis', origin='upper', extent=[0, data.shape[1], 0, data.shape[0]])
+plt.imshow(data, cmap='viridis', origin='upper', vmin=0, vmax=200, extent=[0, data.shape[1], 0, data.shape[0]])
 plt.colorbar(label='Value')
 
 # Set axis labels (if needed)

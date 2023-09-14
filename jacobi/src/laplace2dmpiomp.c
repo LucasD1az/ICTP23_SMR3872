@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
         nloc++;
         offset=0;
     } else offset=rest;
-    if(me==0) offset++;
-    if(me==ncpu-1) offset--;
+    if(me==ncpu-1) 
+        if(!me) offset--;
     printf("I am %d and I have %d rows\n",me,nloc);
     mdim=n*nloc;
     //int n = NN;
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     double dx = 0.5 / (n + 1);
 //    double w = 6000;
 
-    double dt = 0.000000025;//dx / v * 0.5;
+    double dt = 0.000000005;//dx / v * 0.5;
     iter_max=10/w/dt;    //itermax*dt*w=#ciclos = 10
     int d_iter=iter_max/50;
     double v =1700.0;//c*dx/dt;
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
     for( j = 1; j < nloc-1; j++) {
             for( i = 1; i < n-1; i++ ) {
                 int i_g=i;
-                int j_g=j+me*(nloc-2)+offset-1;
+                int j_g=j+me*(nloc-2)+offset;
                 if(j_g>=nc-2&&j<nc+2&&i_g>=nc-2&&i<nc+2)
                     s[j*n+i]=1000*w;
             }
@@ -234,7 +234,7 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
         MPI_Wait(&reqrn,MPI_STATUS_IGNORE);
         MPI_Wait(&reqln,MPI_STATUS_IGNORE);
     }
-    MPI_Barrier( MPI_COMM_WORLD);
+//    MPI_Barrier( MPI_COMM_WORLD);
     int i_g, j_g;
 
     // int nthreads, tid;
@@ -243,7 +243,8 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
         // nthreads = omp_get_num_threads();
         // tid = omp_get_thread_num();
         //printf("I am %d and I have %d threads\n",me,nthreads);
-//    #pragma omp parallel shared(Anew,snew,rnew,lnew,A,s,r,l,n,nloc) private(i,j)
+    #pragma omp parallel for shared(Anew,snew,rnew,lnew,A,s,r,l,n,nloc) private(i,j)
+//    #pragma omp parallel for collapse(2)
     for(j = 1; j < nloc-1; j++) {
         // j=jj+tid;
         // if(j>=nloc-1) break;
@@ -265,7 +266,7 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
         }
     // #pragma omp barrier
     if(me==0){
-        // #pragma omp parallel for
+        #pragma omp parallel for
         for(i=1;i<n-1;i++){
             Anew[i]=Anew[n+i];
             snew[i]=snew[n+i];
@@ -274,7 +275,7 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
         }
     }
     if(me==ncpu-1){
-        // #pragma omp parallel for
+        #pragma omp parallel for
         for(i=1;i<n-1;i++){
             Anew[(nloc-1)*n+i]=Anew[(nloc-2)*n+i];
             snew[(nloc-1)*n+i]=snew[(nloc-2)*n+i];
@@ -282,7 +283,7 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
             lnew[(nloc-1)*n+i]=0;
         }
     }
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for(j=1;j<nloc-1;j++){
             /*for(i=0;i>=0;i--){
                 Anew[j][i]=A[j][i+1];

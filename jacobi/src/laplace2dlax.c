@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#define NN 512
-#define NM 512
+#define NN 1024
+#define NM 1024
 
 double A[NN][NM];
 double Anew[NN][NM];
@@ -28,12 +28,12 @@ int main() {
     int nv = NN/3;
     int mv = NM/3;
     double dx = 0.5 / (n - 1);
-    double w = 4400;
+    double w = 7800;
     //itermax*dt*w=#ciclos
     //double lambda =0.2;//dx*200.0;
-    double dt = 0.000000025;//dx / v * 0.5;
+    double dt = 0.000000005;//dx / v * 0.5;
     int iter_max=10/w/dt;
-    int d_iter=iter_max/100;
+    int d_iter=iter_max/200;
     double v =1700.0;//c*dx/dt;
     double lambda = w*v;//0.2;//dx*200.0;
     //double w = v/lambda;
