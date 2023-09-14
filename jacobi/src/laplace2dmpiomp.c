@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <mpi.h>
+#include <omp.h>
 
 
 /*** function declarations ***/
@@ -75,10 +76,8 @@ int main(int argc, char* argv[]) {
         nloc++;
         offset=0;
     } else offset=rest;
-    if(me!=0){
-        if(me==ncpu-1) offset-=me+1;
-        else offset-=2*me+1;
-    }
+    if(me==0) offset++;
+    if(me==ncpu-1) offset--;
     printf("I am %d and I have %d rows\n",me,nloc);
     mdim=n*nloc;
     //int n = NN;
@@ -124,7 +123,7 @@ int main(int argc, char* argv[]) {
     for( j = 1; j < nloc-1; j++) {
             for( i = 1; i < n-1; i++ ) {
                 int i_g=i;
-                int j_g=j+me*nloc+offset;
+                int j_g=j+me*(nloc-2)+offset-1;
                 if(j_g>=nc-2&&j<nc+2&&i_g>=nc-2&&i<nc+2)
                     s[j*n+i]=1000*w;
             }
@@ -200,62 +199,57 @@ int main(int argc, char* argv[]) {
 
 void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int ncpu, int nloc, int offset, double w, double c, double dt, size_t iter, size_t nc, double *s, double *r, double *l, double *snew, double *rnew, double *lnew ){
     size_t i,j;
-    // MPI_Request reqAp, reqsp, reqrp, reqlp, reqAn, reqsn, reqrn, reqln;
-    // if(prev>=0){
-    //     MPI_Irecv( A , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqAp);
-    //     MPI_Irecv( s , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqsp);
-    //     MPI_Irecv( r , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqrp);
-    //     MPI_Irecv( l , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqlp);
-    //     MPI_Send( A+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( s+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( r+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( l+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     // printf("I am %d communicating with %d\n",me,prev);
-    // }
-    // if(next<ncpu){
-    //     MPI_Irecv( A + (nloc-1)*n, n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqAn);
-    //     MPI_Irecv( s+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqsn);
-    //     MPI_Irecv( r+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqrn);
-    //     MPI_Irecv( l+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqln);
-    //     MPI_Send( A+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( s+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( r+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( l+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     // printf("I am %d communicating with %d\n",me,next);
-    // }
-    // if(prev>=0){
-    //     MPI_Wait(&reqAp,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqsp,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqrp,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqlp,MPI_STATUS_IGNORE);
-    // }
-    // if(next<ncpu){
-    //     MPI_Wait(&reqAn,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqsn,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqrn,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqln,MPI_STATUS_IGNORE);
-    // }
-
-        // Send and receive the rows including edge values
-    if (prev >= 0) {
-        MPI_Sendrecv(A, n, MPI_DOUBLE, prev, 0, A + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(s, n, MPI_DOUBLE, prev, 0, s + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(r, n, MPI_DOUBLE, prev, 0, r + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(l, n, MPI_DOUBLE, prev, 0, l + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Request reqAp, reqsp, reqrp, reqlp, reqAn, reqsn, reqrn, reqln;
+    if(prev>=0){
+        MPI_Irecv( A , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqAp);
+        MPI_Irecv( s , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqsp);
+        MPI_Irecv( r , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqrp);
+        MPI_Irecv( l , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqlp);
+        MPI_Send( A+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        MPI_Send( s+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        MPI_Send( r+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        MPI_Send( l+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        // printf("I am %d communicating with %d\n",me,prev);
     }
-    if (next < ncpu) {
-        MPI_Sendrecv(A + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, A + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(s + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, s + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(r + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, r + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(l + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, l + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    if(next<ncpu){
+        MPI_Irecv( A + (nloc-1)*n, n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqAn);
+        MPI_Irecv( s+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqsn);
+        MPI_Irecv( r+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqrn);
+        MPI_Irecv( l+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqln);
+        MPI_Send( A+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        MPI_Send( s+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        MPI_Send( r+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        MPI_Send( l+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        // printf("I am %d communicating with %d\n",me,next);
     }
-
-    // MPI_Barrier( MPI_COMM_WORLD);
+    if(prev>=0){
+        MPI_Wait(&reqAp,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqsp,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqrp,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqlp,MPI_STATUS_IGNORE);
+    }
+    if(next<ncpu){
+        MPI_Wait(&reqAn,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqsn,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqrn,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqln,MPI_STATUS_IGNORE);
+    }
+    MPI_Barrier( MPI_COMM_WORLD);
     int i_g, j_g;
-    for( j = 1; j < nloc-1; j++) {
+
+    // int nthreads, tid;
+    // #pragma omp parallel 
+    {
+        // nthreads = omp_get_num_threads();
+        // tid = omp_get_thread_num();
+        //printf("I am %d and I have %d threads\n",me,nthreads);
+//    #pragma omp parallel shared(Anew,snew,rnew,lnew,A,s,r,l,n,nloc) private(i,j)
+    for(j = 1; j < nloc-1; j++) {
+        // j=jj+tid;
+        // if(j>=nloc-1) break;
             for( i = 1; i < n-1; i++ ) {
                 i_g=i;
-                j_g=j+me*nloc+offset;
+                j_g=j+me*(nloc-2)+offset-1;
                 rnew[(j*n)+i]=r[(j*n)+i]+0.5*c*((s[(j+1)*n+i]-s[(j-1)*n+i])+c*(r[(j+1)*n+i]-2*r[(j*n)+i]+r[(j-1)*n+i]));
                 lnew[(j*n)+i]=l[(j*n)+i]+0.5*c*((s[(j*n)+i+1]-s[(j*n)+i-1])+c*(l[(j*n)+i+1]-2*l[(j*n)+i]+l[(j*n)+i-1])); 
                 if(j_g>=nc-2&&j_g<nc+2&&i_g>=nc-2&&i_g<nc+2){  
@@ -269,21 +263,27 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
                 
             }
         }
-    if(me==0)
+    // #pragma omp barrier
+    if(me==0){
+        // #pragma omp parallel for
         for(i=1;i<n-1;i++){
             Anew[i]=Anew[n+i];
             snew[i]=snew[n+i];
             rnew[i]=0;
             lnew[i]=0;
         }
-    if(me==ncpu-1)
+    }
+    if(me==ncpu-1){
+        // #pragma omp parallel for
         for(i=1;i<n-1;i++){
             Anew[(nloc-1)*n+i]=Anew[(nloc-2)*n+i];
             snew[(nloc-1)*n+i]=snew[(nloc-2)*n+i];
             rnew[(nloc-1)*n+i]=0;
             lnew[(nloc-1)*n+i]=0;
         }
-        for(j=1;j<nloc-1;j++){
+    }
+    // #pragma omp parallel for
+    for(j=1;j<nloc-1;j++){
             /*for(i=0;i>=0;i--){
                 Anew[j][i]=A[j][i+1];
                 snew[j][i]=s[j][i+1];
@@ -296,15 +296,16 @@ void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int
                 rnew[j][i]=0;
                 lnew[j][i]=0;
             }*/
-            Anew[j*n]=Anew[j*n+1];
-            Anew[j*n+n-1]=Anew[j*n+n-2];
-            snew[j*n]=snew[j*n+1];
-            snew[j*n+n-1]=snew[j*n+n-2];
-            rnew[j*n]=0;
-            rnew[j*n+n-1]=0;
-            lnew[j*n]=0;
-            lnew[j*n+n-1]=0;
-        }
+        Anew[j*n]=Anew[j*n+1];
+        Anew[j*n+n-1]=Anew[j*n+n-2];
+        snew[j*n]=snew[j*n+1];
+        snew[j*n+n-1]=snew[j*n+n-2];
+        rnew[j*n]=0;
+        rnew[j*n+n-1]=0;
+        lnew[j*n]=0;
+        lnew[j*n+n-1]=0;
+    }
+    }
 }
 
 void save_gnuplot( double *M, size_t dimension, int me, int ncpu, int nloc, int offset ){
