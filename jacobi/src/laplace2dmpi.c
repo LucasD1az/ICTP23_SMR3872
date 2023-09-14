@@ -200,56 +200,41 @@ int main(int argc, char* argv[]) {
 
 void evolve( double * A, double *Anew, size_t n, int me, int prev, int next, int ncpu, int nloc, int offset, double w, double c, double dt, size_t iter, size_t nc, double *s, double *r, double *l, double *snew, double *rnew, double *lnew ){
     size_t i,j;
-    // MPI_Request reqAp, reqsp, reqrp, reqlp, reqAn, reqsn, reqrn, reqln;
-    // if(prev>=0){
-    //     MPI_Irecv( A , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqAp);
-    //     MPI_Irecv( s , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqsp);
-    //     MPI_Irecv( r , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqrp);
-    //     MPI_Irecv( l , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqlp);
-    //     MPI_Send( A+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( s+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( r+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( l+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
-    //     // printf("I am %d communicating with %d\n",me,prev);
-    // }
-    // if(next<ncpu){
-    //     MPI_Irecv( A + (nloc-1)*n, n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqAn);
-    //     MPI_Irecv( s+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqsn);
-    //     MPI_Irecv( r+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqrn);
-    //     MPI_Irecv( l+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqln);
-    //     MPI_Send( A+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( s+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( r+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     MPI_Send( l+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
-    //     // printf("I am %d communicating with %d\n",me,next);
-    // }
-    // if(prev>=0){
-    //     MPI_Wait(&reqAp,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqsp,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqrp,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqlp,MPI_STATUS_IGNORE);
-    // }
-    // if(next<ncpu){
-    //     MPI_Wait(&reqAn,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqsn,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqrn,MPI_STATUS_IGNORE);
-    //     MPI_Wait(&reqln,MPI_STATUS_IGNORE);
-    // }
-
-        // Send and receive the rows including edge values
-    if (prev >= 0) {
-        MPI_Sendrecv(A, n, MPI_DOUBLE, prev, 0, A + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(s, n, MPI_DOUBLE, prev, 0, s + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(r, n, MPI_DOUBLE, prev, 0, r + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(l, n, MPI_DOUBLE, prev, 0, l + nloc * n, n, MPI_DOUBLE, prev, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Request reqAp, reqsp, reqrp, reqlp, reqAn, reqsn, reqrn, reqln;
+    if(prev>=0){
+        MPI_Irecv( A , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqAp);
+        MPI_Irecv( s , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqsp);
+        MPI_Irecv( r , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqrp);
+        MPI_Irecv( l , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD , &reqlp);
+        MPI_Send( A+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        MPI_Send( s+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        MPI_Send( r+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        MPI_Send( l+n , n , MPI_DOUBLE , prev , 0 , MPI_COMM_WORLD );
+        // printf("I am %d communicating with %d\n",me,prev);
     }
-    if (next < ncpu) {
-        MPI_Sendrecv(A + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, A + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(s + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, s + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(r + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, r + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(l + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, l + nloc * n + (nloc - 1) * n, n, MPI_DOUBLE, next, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    if(next<ncpu){
+        MPI_Irecv( A + (nloc-1)*n, n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqAn);
+        MPI_Irecv( s+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqsn);
+        MPI_Irecv( r+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqrn);
+        MPI_Irecv( l+ (nloc-1)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD , &reqln);
+        MPI_Send( A+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        MPI_Send( s+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        MPI_Send( r+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        MPI_Send( l+ (nloc-2)*n , n , MPI_DOUBLE , next , 0 , MPI_COMM_WORLD );
+        // printf("I am %d communicating with %d\n",me,next);
     }
-
+    if(prev>=0){
+        MPI_Wait(&reqAp,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqsp,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqrp,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqlp,MPI_STATUS_IGNORE);
+    }
+    if(next<ncpu){
+        MPI_Wait(&reqAn,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqsn,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqrn,MPI_STATUS_IGNORE);
+        MPI_Wait(&reqln,MPI_STATUS_IGNORE);
+    }
     // MPI_Barrier( MPI_COMM_WORLD);
     int i_g, j_g;
     for( j = 1; j < nloc-1; j++) {
